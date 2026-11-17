@@ -127,6 +127,18 @@ class CorrelationState:
             cooldowns = self._cooldowns.setdefault(rule_id, {})
             cooldowns[group_key] = time.time()
 
+    def reset_group(self, rule_id: str, group_key: str) -> None:
+        """
+        Start a fresh detection window after an alert has fired.
+
+        Without clearing matched events, the next event sequence is still
+        counted against the previous alert and the cooldown suppresses the
+        next legitimate occurrence.
+        """
+        with self._lock:
+            self._windows.get(rule_id, {}).pop(group_key, None)
+            self._cooldowns.get(rule_id, {}).pop(group_key, None)
+
     def clear(self) -> None:
         """
         Reset all state for testing or shutdown
@@ -201,7 +213,7 @@ def _evaluate_threshold(
     entries = state.get_window(rule_id, group_key, window_seconds)
 
     if len(entries) >= threshold:
-        state.mark_fired(rule_id, group_key)
+        state.reset_group(rule_id, group_key)
         return EvaluationResult(
             matched_event_ids=[e.event_id for e in entries],
             group_value=group_key,
@@ -247,7 +259,7 @@ def _evaluate_sequence(
         if len(step_entries) < required_count:
             return None
 
-    state.mark_fired(rule_id, group_key)
+    state.reset_group(rule_id, group_key)
     return EvaluationResult(
         matched_event_ids=[e.event_id for e in entries],
         group_value=group_key,
@@ -285,7 +297,7 @@ def _evaluate_aggregation(
     }
 
     if len(distinct_values) >= threshold:
-        state.mark_fired(rule_id, group_key)
+        state.reset_group(rule_id, group_key)
         return EvaluationResult(
             matched_event_ids=[e.event_id for e in entries],
             group_value=group_key,

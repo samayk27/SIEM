@@ -14,7 +14,7 @@
 [![Live Demo](https://img.shields.io/badge/Live-siem.carterperez--dev.com-green?style=flat&logo=googlechrome)](https://siem.carterperez-dev.com/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat&logo=docker)](https://www.docker.com)
 
-> Full-stack SIEM dashboard with real-time log correlation and MITRE ATT&CK attack scenario simulation engine.
+> Full-stack SIEM dashboard with real-time log correlation, alert workflows, and an isolated enterprise client demo.
 
 *This is a quick overview — security theory, architecture, and full walkthroughs are in the [learn modules](#learn).*
 
@@ -25,8 +25,11 @@
 - Real-time log ingestion and event correlation with three rule types (Threshold, Sequence, Aggregation)
 - Four YAML-based attack playbooks mapped to MITRE ATT&CK (brute force, DNS tunneling, phishing, privilege escalation)
 - Server-Sent Events for live alert feed with paginated, filterable log viewer
+- Manual refresh controls for alert and log queries, plus audible/browser alert notifications
 - Alert lifecycle management (acknowledge, investigate, resolve, false positive)
 - Attack simulation engine that generates realistic multi-stage security events
+- Client workspace with signup, secure sessions, approvals, document activity, and external message ingestion
+- Client login telemetry for repeated failed passwords and SQL-injection-shaped authentication requests
 - Built with Just for task automation with full Docker Compose deployment
 
 ## Quick Start
@@ -36,6 +39,31 @@ docker compose up -d
 ```
 
 Visit `http://localhost:8431` or the live demo at [siem.carterperez-dev.com](https://siem.carterperez-dev.com/)
+
+The isolated enterprise client demo is available at `http://localhost:7357`.
+Users can sign in with the configured client identity or create an account
+from `/signup`. Client actions such as document access, approvals, and failed
+login requests are forwarded through the normal ingestion pipeline, so the
+correlation engine creates alerts visible in the SIEM Alerts page.
+The development default is `alex.chen` / `AcmeDemo!2026`; set
+`CLIENT_SECRET_KEY` and `CLIENT_PASSWORD_HASH` in `.env` for a deployment.
+It is a separate application and service: browser actions go to the client
+service, which forwards only allowlisted telemetry to the SIEM over the
+internal Docker network. The browser never receives the SIEM ingestion key.
+External applications can send a signed message to
+`POST /api/external/messages` using the `X-External-Key` header and a JSON
+body such as `{"message":"Customer export job failed","integration":"billing"}`.
+The client forwards the message into SIEM ingestion as an auditable event.
+Configure `CLIENT_EXTERNAL_KEY` before using this integration.
+
+The client also exposes an authenticated external message source:
+
+```bash
+curl -X POST http://localhost:7357/api/external/messages \
+  -H "Content-Type: application/json" \
+  -H "X-External-Key: $CLIENT_EXTERNAL_KEY" \
+  -d '{"message":"Customer export job failed","integration":"billing"}'
+```
 
 > [!TIP]
 > This project uses [`just`](https://github.com/casey/just) as a command runner. Type `just` to see all available commands.

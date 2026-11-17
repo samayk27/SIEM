@@ -27,6 +27,31 @@ services:
           memory: 64M
     restart: always
 
+  enterprise-client:
+    build:
+      context: .
+      dockerfile: client-app/Dockerfile
+    container_name: ${APP_NAME:-siem}-enterprise-client
+    ports:
+      - "${CLIENT_HOST_PORT:-7357}:7357"
+    environment:
+      - SIEM_INGEST_URL=http://backend:5000/v1/logs/ingest
+      - CLIENT_SECRET_KEY=${CLIENT_SECRET_KEY:-}
+      - CLIENT_USERNAME=${CLIENT_USERNAME:-alex.chen}
+      - CLIENT_PASSWORD_HASH=${CLIENT_PASSWORD_HASH:-}
+      - SCENARIO_SERVICE_KEY=${SCENARIO_SERVICE_KEY:-local-scenario-service-key}
+      - CLIENT_EXTERNAL_KEY=${CLIENT_EXTERNAL_KEY:-local-external-source-key}
+      - CLIENT_DB=/data/client.db
+    volumes:
+      - client_data:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    restart: always
+
   backend:
     build:
       context: .
@@ -40,6 +65,7 @@ services:
       - MONGO_URI=mongodb://mongo:27017/${MONGO_DB:-siem}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - DEBUG=false
+      - SCENARIO_SERVICE_KEY=${SCENARIO_SERVICE_KEY:-local-scenario-service-key}
     depends_on:
       mongo:
         condition: service_healthy
@@ -122,5 +148,6 @@ networks:
         - subnet: 10.202.84.0/24
 
 volumes:
+  client_data:
   mongo_data:
   redis_data:

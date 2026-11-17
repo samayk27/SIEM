@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Create account · Acme Workspace</title><link rel="stylesheet" href="/assets/styles.css" /></head>
+  <body>
+    <main class="login-screen"><section class="login-card">
+      <div class="brand"><span class="brand-mark">A</span><strong>Acme Workspace</strong></div>
+      <p class="eyebrow">NEW USER</p><h1>Create your workspace account</h1>
+      <form id="signup-form">
+        <label>Display name<input id="display-name" required /></label>
+        <label>Username<input id="username" autocomplete="username" required /></label>
+        <label>Department<input id="department" value="Engineering" required /></label>
+        <label>Password<input id="password" type="password" minlength="10" autocomplete="new-password" required /></label>
+        <button class="primary full" type="submit">Create account</button>
+        <div id="signup-error" class="login-error hidden"></div>
+      </form>
+      <a class="signup-link" href="/">Back to sign in</a>
+    </section></main>
+    <script src="/assets/signup.js"></script>
+  </body>
+</html>

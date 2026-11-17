@@ -108,7 +108,11 @@ evaluator  evaluator  evaluator
 
 Each evaluator uses a `CorrelationState` object that maintains sliding windows in memory. The state is thread-safe (uses `threading.Lock`) and tracks per-rule, per-group-key windows of events. When evaluating, it prunes expired entries based on `window_seconds` and checks whether the firing condition is met.
 
-A cooldown mechanism (`CORRELATION_COOLDOWN_SECONDS`, default 300) prevents the same rule from firing repeatedly for the same group key. Without this, a sustained brute force would generate hundreds of identical alerts.
+A sustained brute force should not generate hundreds of identical alerts, but a
+completed detection must not permanently suppress future incidents. After a
+threshold, sequence, or aggregation rule fires, the matched window and
+per-group cooldown state are reset. A later sequence of matching events can
+therefore create a fresh alert.
 
 ### Common Attacks This Detects
 
@@ -116,10 +120,12 @@ A cooldown mechanism (`CORRELATION_COOLDOWN_SECONDS`, default 300) prevents the 
 2. **Lateral Movement (T1021.004)** - Sequence rule: `login_success` from external IP followed by internal SSH connections from the compromised host
 3. **Port Scanning (T1046)** - Aggregation rule: count distinct `dest_ip` values per `source_ip`, fire when > 20 unique destinations in 60 seconds
 4. **DNS Tunneling (T1048.003)** - Threshold rule on high-frequency TXT queries to a single domain, or aggregation on distinct query subdomains
+5. **Authentication abuse** - Failed login bursts from a source IP, including telemetry from the enterprise client's real login endpoint
+6. **SQL injection attempts** - SQL-injection-shaped input submitted to the client login endpoint is recorded as a dedicated authentication event
 
 ### Defense Strategies
 
-The correlation engine itself is a defense mechanism. But it needs well-tuned rules. This project ships with scenario playbooks that demonstrate attacks and the rules that detect them. The `brute_force_lateral.yml` playbook, for example, simulates 20 SSH login failures followed by a successful login and lateral movement. A threshold rule on `login_failure` grouped by `source_ip` with threshold 10 and window 300 would catch the brute force phase.
+The correlation engine itself is a defense mechanism. But it needs well-tuned rules. This project ships with scenario playbooks that demonstrate attacks and the client application also emits telemetry from real failed login requests. The `brute_force_lateral.yml` playbook simulates SSH login failures followed by lateral movement, while repeated wrong passwords entered at the client login page produce `login_failure` events. Both paths use the same correlation pipeline.
 
 ## Severity Classification
 

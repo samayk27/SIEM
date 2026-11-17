@@ -50,6 +50,20 @@ DEFAULT_RULES = [
         "mitre_technique": "T1110 Brute Force",
     },
     {
+        "name": "SQL Injection in Authentication",
+        "description": "Detects SQL injection syntax submitted to the enterprise sign-in endpoint.",
+        "rule_type": RuleType.THRESHOLD,
+        "conditions": {
+            "event_filter": {"event_type": "login_sql_injection"},
+            "threshold": 1,
+            "window_seconds": 300,
+            "group_by": "source_ip",
+        },
+        "severity": Severity.CRITICAL,
+        "mitre_tactic": "Initial Access",
+        "mitre_technique": "T1190 Exploit Public-Facing Application",
+    },
+    {
         "name": "Bulk Sensitive Downloads",
         "description": "Detects rapid file downloads by one enterprise user.",
         "rule_type": RuleType.THRESHOLD,
@@ -69,24 +83,81 @@ DEFAULT_RULES = [
         "rule_type": RuleType.THRESHOLD,
         "conditions": {
             "event_filter": {"event_type": "rate_limit_blocked"},
-            "threshold": 1,
+            "threshold": 3,
             "window_seconds": 300,
             "group_by": "source_ip",
         },
         "severity": Severity.MEDIUM,
-        "mitre_tactic": "Credential Access",
-        "mitre_technique": "T1110 Brute Force",
+        "mitre_tactic": "Impact",
+        "mitre_technique": "T1499 Endpoint Denial of Service",
+    },
+    {
+        "name": "Network Reconnaissance Burst",
+        "description": "Detects repeated port scans from one source against the enterprise network.",
+        "rule_type": RuleType.THRESHOLD,
+        "conditions": {
+            "event_filter": {"event_type": "port_scan"},
+            "threshold": 3,
+            "window_seconds": 180,
+            "group_by": "source_ip",
+        },
+        "severity": Severity.MEDIUM,
+        "mitre_tactic": "Reconnaissance",
+        "mitre_technique": "T1046 Network Service Scanning",
+    },
+    {
+        "name": "DNS Tunneling Activity",
+        "description": "Detects sustained DNS query activity associated with covert data movement.",
+        "rule_type": RuleType.THRESHOLD,
+        "conditions": {
+            "event_filter": {"event_type": "dns_query"},
+            "threshold": 5,
+            "window_seconds": 300,
+            "group_by": "source_ip",
+        },
+        "severity": Severity.HIGH,
+        "mitre_tactic": "Command and Control",
+        "mitre_technique": "T1071.004 DNS",
+    },
+    {
+        "name": "Privilege Escalation Detected",
+        "description": "Detects a privilege escalation event requiring immediate analyst review.",
+        "rule_type": RuleType.THRESHOLD,
+        "conditions": {
+            "event_filter": {"event_type": "privilege_escalation"},
+            "threshold": 1,
+            "window_seconds": 300,
+            "group_by": "username",
+        },
+        "severity": Severity.CRITICAL,
+        "mitre_tactic": "Privilege Escalation",
+        "mitre_technique": "T1548 Abuse Elevation Control Mechanism",
     },
 ]
+OBSOLETE_DEMO_RULES = {
+    "SQL Injection Attempts",
+    "Suspicious Command Execution",
+    "Suspicious PowerShell Activity",
+}
 
 
 def ensure_default_rules() -> None:
     """
-    Seed useful lab detections without overwriting user-created rules.
+    Seed useful enterprise detections without overwriting user-created rules.
     """
+    for name in OBSOLETE_DEMO_RULES:
+        CorrelationRule.objects(name=name).delete()
     for definition in DEFAULT_RULES:
-        if CorrelationRule.objects(name=definition["name"]).first() is None:
+        rule = CorrelationRule.objects(name=definition["name"]).first()
+        if rule is None:
             CorrelationRule(**definition).save()
+            continue
+        if rule.conditions != definition["conditions"]:
+            rule.conditions = definition["conditions"]
+            rule.description = definition["description"]
+            rule.mitre_tactic = definition["mitre_tactic"]
+            rule.mitre_technique = definition["mitre_technique"]
+            rule.save()  # type: ignore[no-untyped-call]
 
 
 def list_rules() -> list[Any]:

@@ -19,7 +19,7 @@ Connects to:
 """
 
 from typing import Any
-from datetime import datetime
+from datetime import datetime, UTC
 
 from bson import ObjectId
 from mongoengine import (
@@ -39,7 +39,12 @@ def serialize_value(value: Any) -> Any:
     if isinstance(value, ObjectId):
         return str(value)
     if isinstance(value, datetime):
-        return value.isoformat()
+        timestamp = value
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=UTC)
+        else:
+            timestamp = timestamp.astimezone(UTC)
+        return timestamp.isoformat().replace("+00:00", "Z")
     if isinstance(value, EmbeddedDocument):
         return serialize_document(value)
     if isinstance(value, list):

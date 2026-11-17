@@ -1282,7 +1282,7 @@ Check these in order:
 1. Is the correlation engine thread running? Check backend logs for "Correlation engine started."
 2. Is the rule enabled? `CorrelationRule.objects(enabled=True)` in a Flask shell.
 3. Does the event match the rule? The `_event_matches_rule()` function checks `event_type` and `source_type` against the rule's conditions.
-4. Is the rule in cooldown? After firing once, it won't fire again for `CORRELATION_COOLDOWN_SECONDS` (default 300).
+4. Is the rule in cooldown? A firing rule resets its matched window and group cooldown after creating an alert, so a later independent sequence can fire again. A sustained stream still needs appropriately tuned thresholds and windows to avoid alert noise.
 5. Has the rule cache expired? Rules are cached for 30 seconds. New rules take up to 30 seconds to be evaluated.
 
 ### "Authentication errors on every request"

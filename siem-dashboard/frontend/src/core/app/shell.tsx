@@ -19,25 +19,28 @@
 //   useAuth.ts - calls useLogout for the logout button
 // ===================
 
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { GiButterflyWarning } from 'react-icons/gi'
 import {
   LuActivity,
-  LuBuilding2,
   LuChevronLeft,
   LuChevronRight,
   LuLayoutDashboard,
   LuLogOut,
   LuMenu,
-  LuPlay,
   LuScroll,
   LuSettings,
   LuShield,
   LuUsers,
 } from 'react-icons/lu'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useLogout } from '@/api/hooks'
+import {
+  armAlertNotifications,
+  useAlertStream,
+  useLogStream,
+  useLogout,
+} from '@/api/hooks'
 import { ROUTES } from '@/config'
 import { useAuthStore, useUIStore } from '@/core/stores'
 import styles from './shell.module.scss'
@@ -47,8 +50,6 @@ const NAV_ITEMS = [
   { path: ROUTES.LOGS, label: 'Log Viewer', icon: LuScroll },
   { path: ROUTES.ALERTS, label: 'Alerts', icon: GiButterflyWarning },
   { path: ROUTES.RULES, label: 'Rules', icon: LuShield },
-  { path: ROUTES.SCENARIOS, label: 'Scenarios', icon: LuPlay },
-  { path: ROUTES.LAB, label: 'Enterprise Lab', icon: LuBuilding2 },
 ] as const
 
 const BOTTOM_NAV_ITEMS = [
@@ -80,12 +81,17 @@ function getPageTitle(pathname: string): string {
 }
 
 export function Shell(): React.ReactElement {
+  useAlertStream()
+  useLogStream()
   const location = useLocation()
   const { sidebarOpen, sidebarCollapsed, toggleSidebar, toggleSidebarCollapsed } =
     useUIStore()
   const { mutate: logout } = useLogout()
   const user = useAuthStore((s) => s.user)
   const isAdmin = user?.role === 'admin'
+  const [alertsArmed, setAlertsArmed] = useState(
+    () => window.localStorage.getItem('siem-alert-sound') === 'enabled',
+  )
 
   const pageTitle = getPageTitle(location.pathname)
   const avatarLetter = user?.username?.[0]?.toUpperCase() ?? 'U'
@@ -197,6 +203,17 @@ export function Shell(): React.ReactElement {
           </div>
 
           <div className={styles.headerRight}>
+            <button
+              type="button"
+              className={styles.menuBtn}
+              onClick={() => {
+                void armAlertNotifications().then(() => setAlertsArmed(true))
+              }}
+              title="Enable alert sound and browser notifications"
+              aria-label="Enable alert sound and browser notifications"
+            >
+              {alertsArmed ? '🔔' : '🔕'}
+            </button>
             <span className={styles.avatar}>{avatarLetter}</span>
           </div>
         </header>

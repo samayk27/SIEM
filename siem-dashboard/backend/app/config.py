@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     SCENARIO_PLAYBOOK_DIR: str = str(Path(__file__).parent / "scenarios" / "playbooks")
     SCENARIO_MIN_SPEED: float = 0.1
     SCENARIO_MAX_SPEED: float = 10.0
+    SCENARIO_SERVICE_KEY: str = ""
 
     CORRELATION_COOLDOWN_SECONDS: int = 300
     CORRELATION_RULE_CACHE_SECONDS: int = 30

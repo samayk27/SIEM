@@ -70,10 +70,6 @@ export const API_ENDPOINTS = {
     RESUME: (runId: string) => `/${API_VERSION}/scenarios/${runId}/resume`,
     SPEED: (runId: string) => `/${API_VERSION}/scenarios/${runId}/speed`,
   },
-  LAB: {
-    OVERVIEW: `/${API_VERSION}/lab/overview`,
-    ACTIONS: `/${API_VERSION}/lab/actions`,
-  },
 } as const
 
 export const QUERY_KEYS = {
@@ -92,8 +88,13 @@ export const QUERY_KEYS = {
   },
   LOGS: {
     ALL: ['logs'] as const,
-    LIST: (page: number, size: number) =>
-      [...QUERY_KEYS.LOGS.ALL, 'list', { page, size }] as const,
+    LIST: (params: {
+      page?: number
+      per_page?: number
+      source_type?: string
+      severity?: string
+      event_type?: string
+    }) => [...QUERY_KEYS.LOGS.ALL, 'list', params] as const,
     BY_ID: (id: string) => [...QUERY_KEYS.LOGS.ALL, 'detail', id] as const,
     SEARCH: (query: string, page: number, size: number) =>
       [...QUERY_KEYS.LOGS.ALL, 'search', { query, page, size }] as const,
@@ -102,8 +103,12 @@ export const QUERY_KEYS = {
   },
   ALERTS: {
     ALL: ['alerts'] as const,
-    LIST: (page: number, size: number) =>
-      [...QUERY_KEYS.ALERTS.ALL, 'list', { page, size }] as const,
+    LIST: (params: {
+      page?: number
+      per_page?: number
+      status?: string
+      severity?: string
+    }) => [...QUERY_KEYS.ALERTS.ALL, 'list', params] as const,
     BY_ID: (id: string) => [...QUERY_KEYS.ALERTS.ALL, 'detail', id] as const,
   },
   RULES: {
@@ -122,10 +127,6 @@ export const QUERY_KEYS = {
       [...QUERY_KEYS.ADMIN.ALL, 'users', { page, size }] as const,
     USER_BY_ID: (id: string) => [...QUERY_KEYS.ADMIN.ALL, 'user', id] as const,
   },
-  LAB: {
-    ALL: ['lab'] as const,
-    OVERVIEW: () => [...QUERY_KEYS.LAB.ALL, 'overview'] as const,
-  },
 } as const
 
 export const ROUTES = {
@@ -137,7 +138,6 @@ export const ROUTES = {
   ALERTS: '/alerts',
   RULES: '/rules',
   SCENARIOS: '/scenarios',
-  LAB: '/enterprise-lab',
   SETTINGS: '/settings',
   ADMIN_USERS: '/admin/users',
 } as const

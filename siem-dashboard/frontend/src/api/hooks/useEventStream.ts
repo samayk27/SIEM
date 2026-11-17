@@ -27,6 +27,24 @@ import { getBaseURL } from '@/core/lib'
 import { useAuthStore, useStreamStore } from '@/core/stores'
 
 const SSE_RECONNECT_DELAY = 3000
+let alertAudioContext: AudioContext | null = null
+
+export async function armAlertNotifications(): Promise<void> {
+  window.localStorage.setItem('siem-alert-sound', 'enabled')
+  const AudioContextClass =
+    window.AudioContext ??
+    (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext
+  if (AudioContextClass) {
+    alertAudioContext ??= new AudioContextClass()
+    if (alertAudioContext.state === 'suspended') {
+      await alertAudioContext.resume()
+    }
+  }
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission()
+  }
+}
 
 export function useLogStream(): void {
   const token = useAuthStore((s) => s.accessToken)
@@ -83,6 +101,17 @@ export function useAlertStream(): void {
 
     source.addEventListener('alert', (event: MessageEvent<string>) => {
       const data = JSON.parse(event.data) as StreamAlertEvent
+      void playAlertSound()
+      if (
+        'Notification' in window &&
+        Notification.permission === 'granted' &&
+        document.visibilityState !== 'visible'
+      ) {
+        new Notification(`New ${data.severity ?? 'security'} alert`, {
+          body: data.title ?? 'A new SIEM alert requires attention',
+          tag: `siem-alert-${data.id}`,
+        })
+      }
       pushAlertEvent({
         id: data.id,
         timestamp: new Date().toISOString(),
@@ -96,6 +125,7 @@ export function useAlertStream(): void {
       sourceRef.current = null
       setTimeout(connect, SSE_RECONNECT_DELAY)
     }
+
   }, [token, setAlertConnected, pushAlertEvent])
 
   useEffect(() => {
@@ -106,4 +136,45 @@ export function useAlertStream(): void {
       setAlertConnected(false)
     }
   }, [connect, setAlertConnected])
+}
+
+async function playAlertSound(): Promise<void> {
+  const AudioContextClass =
+    window.AudioContext ??
+    (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext
+  if (!AudioContextClass) {
+    console.error('Alert sound is unavailable: Web Audio is not supported')
+    return
+  }
+
+  try {
+    alertAudioContext ??= new AudioContextClass()
+    if (alertAudioContext.state === 'suspended') {
+      await alertAudioContext.resume()
+    }
+
+    const now = alertAudioContext.currentTime
+    const gain = alertAudioContext.createGain()
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.8, now + 0.025)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.9)
+    gain.connect(alertAudioContext.destination)
+
+    for (const [frequency, offset] of [
+      [880, 0],
+      [1175, 0.18],
+      [880, 0.36],
+      [1175, 0.54],
+    ] as const) {
+      const oscillator = alertAudioContext.createOscillator()
+      oscillator.type = 'square'
+      oscillator.frequency.setValueAtTime(frequency, now + offset)
+      oscillator.connect(gain)
+      oscillator.start(now + offset)
+      oscillator.stop(now + offset + 0.14)
+    }
+  } catch (error) {
+    console.error('Unable to play alert sound', error)
+  }
 }

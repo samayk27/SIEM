@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · Acme Workspace</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <main class="login-screen">
+      <section class="login-card">
+        <div class="brand"><span class="brand-mark">A</span><strong>Acme Workspace</strong></div>
+        <p class="eyebrow">SECURE WORKSPACE</p>
+        <h1>Sign in to your workspace</h1>
+        <p class="muted">Access protected documents, approvals, and monitored security operations.</p>
+        <form id="login-form">
+          <label>Username<input id="login-username" autocomplete="username" value="alex.chen" required /></label>
+          <label>Password<input id="login-password" type="password" autocomplete="current-password" required /></label>
+          <button class="primary full" type="submit">Sign in</button>
+          <div id="login-error" class="login-error hidden"></div>
+        </form>
+        <a class="signup-link" href="/signup">Create an account</a>
+      </section>
+    </main>
+    <script src="/assets/login.js"></script>
+  </body>
+</html>

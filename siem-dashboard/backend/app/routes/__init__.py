@@ -4,7 +4,7 @@ __init__.py
 
 Blueprint registration for the Flask application
 
-register_blueprints mounts all seven route blueprints under the /v1
+register_blueprints mounts the route blueprints under the /v1
 API prefix. Called by the application factory during startup.
 
 Key exports:
@@ -28,7 +28,6 @@ def register_blueprints(app: Flask) -> None:
     from app.routes.alerts import alerts_bp
     from app.routes.rules import rules_bp
     from app.routes.scenarios import scenarios_bp
-    from app.routes.lab import lab_bp
 
     app.register_blueprint(auth_bp, url_prefix = f"{API_PREFIX}/auth")
     app.register_blueprint(admin_bp, url_prefix = f"{API_PREFIX}/admin")
@@ -37,4 +36,3 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(alerts_bp, url_prefix = f"{API_PREFIX}/alerts")
     app.register_blueprint(rules_bp, url_prefix = f"{API_PREFIX}/rules")
     app.register_blueprint(scenarios_bp, url_prefix = f"{API_PREFIX}/scenarios")
-    app.register_blueprint(lab_bp, url_prefix = f"{API_PREFIX}/lab")

@@ -34,7 +34,7 @@ import { apiClient, QUERY_STRATEGIES } from '@/core/lib'
 
 export const logQueries = {
   all: () => QUERY_KEYS.LOGS.ALL,
-  list: (page: number, size: number) => QUERY_KEYS.LOGS.LIST(page, size),
+  list: (params: LogQueryParams) => QUERY_KEYS.LOGS.LIST(params),
   byId: (id: string) => QUERY_KEYS.LOGS.BY_ID(id),
   search: (query: string, page: number, size: number) =>
     QUERY_KEYS.LOGS.SEARCH(query, page, size),
@@ -44,11 +44,8 @@ export const logQueries = {
 export const useLogs = (
   params: LogQueryParams = {}
 ): UseQueryResult<PaginatedResponse<LogEvent>, Error> => {
-  const page = params.page ?? PAGINATION.DEFAULT_PAGE
-  const perPage = params.per_page ?? PAGINATION.DEFAULT_SIZE
-
   return useQuery({
-    queryKey: logQueries.list(page, perPage),
+    queryKey: logQueries.list(params),
     queryFn: async () => {
       const response = await apiClient.get<PaginatedResponse<LogEvent>>(
         API_ENDPOINTS.LOGS.LIST,

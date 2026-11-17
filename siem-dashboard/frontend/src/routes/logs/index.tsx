@@ -18,8 +18,14 @@
 //   config.ts - SEVERITY_LABELS for display strings
 // ===================
 
-import { useState } from 'react'
-import { LuChevronLeft, LuChevronRight, LuSearch, LuX } from 'react-icons/lu'
+import { useEffect, useRef, useState } from 'react'
+import {
+  LuChevronLeft,
+  LuChevronRight,
+  LuRefreshCw,
+  LuSearch,
+  LuX,
+} from 'react-icons/lu'
 import { useLogDetail, useLogs } from '@/api/hooks'
 import type { LogEvent, LogQueryParams } from '@/api/types'
 import { SEVERITY_LABELS } from '@/config'
@@ -52,8 +58,15 @@ export function Component(): React.ReactElement {
     ...(search && { event_type: search }),
   }
 
-  const { data, isLoading } = useLogs(params)
+  const { data, isLoading, refetch, isFetching } = useLogs(params)
   const detail = useLogDetail(selectedId ?? '')
+  const detailRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (selectedId && detail.data) {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [selectedId, detail.data])
 
   return (
     <div className={styles.page}>
@@ -113,6 +126,16 @@ export function Component(): React.ReactElement {
             </button>
           )}
         </div>
+        <button
+          type="button"
+          className={styles.refreshBtn}
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          title="Refresh logs"
+        >
+          <LuRefreshCw className={isFetching ? styles.spinning : undefined} />
+          Refresh
+        </button>
       </div>
 
       <div className={styles.tableWrapper}>
@@ -153,13 +176,7 @@ export function Component(): React.ReactElement {
                   }
                 >
                   <td className={styles.mono}>
-                    {new Date(log.timestamp).toLocaleString([], {
-                      month: 'short',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                    })}
+                    {formatTimestamp(log.timestamp)}
                   </td>
                   <td>
                     <span className={`${styles.badge} ${styles[log.severity]}`}>
@@ -179,7 +196,9 @@ export function Component(): React.ReactElement {
       </div>
 
       {selectedId && detail.data && (
-        <LogDetail log={detail.data} onClose={() => setSelectedId(null)} />
+        <div ref={detailRef}>
+          <LogDetail log={detail.data} onClose={() => setSelectedId(null)} />
+        </div>
       )}
 
       {data && data.pages > 1 && (
@@ -230,7 +249,7 @@ function LogDetail({
         <DetailField label="ID" value={log.id} />
         <DetailField
           label="Timestamp"
-          value={new Date(log.timestamp).toLocaleString()}
+          value={formatTimestamp(log.timestamp)}
         />
         <DetailField label="Source Type" value={log.source_type} />
         <DetailField label="Severity" value={log.severity} />
@@ -262,6 +281,20 @@ function LogDetail({
       )}
     </div>
   )
+}
+
+function formatTimestamp(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Invalid timestamp'
+  return new Intl.DateTimeFormat([], {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  }).format(date)
 }
 
 function DetailField({

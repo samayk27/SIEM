@@ -19,8 +19,8 @@
 //   config.ts - ALERT_STATUS_LABELS, SEVERITY_LABELS
 // ===================
 
-import { useState } from 'react'
-import { LuChevronLeft, LuChevronRight, LuX } from 'react-icons/lu'
+import { useEffect, useRef, useState } from 'react'
+import { LuChevronLeft, LuChevronRight, LuRefreshCw, LuX } from 'react-icons/lu'
 import { useAlertDetail, useAlerts, useUpdateAlertStatus } from '@/api/hooks'
 import type { Alert } from '@/api/types'
 import { ALERT_STATUS_LABELS, SEVERITY_LABELS } from '@/config'
@@ -35,23 +35,32 @@ const STATUS_STYLE: Record<string, string> = {
 }
 
 const STATUS_TABS = [
-  { value: '', label: 'All' },
   { value: 'new', label: 'New' },
   { value: 'acknowledged', label: 'Acknowledged' },
   { value: 'investigating', label: 'Investigating' },
   { value: 'resolved', label: 'Resolved' },
+  { value: '', label: 'All' },
 ]
 
 export function Component(): React.ReactElement {
   const [page, setPage] = useState(1)
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('new')
+  const [severityFilter, setSeverityFilter] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
 
-  const { data, isLoading } = useAlerts({
+  const { data, isLoading, refetch, isFetching } = useAlerts({
     page,
     per_page: 25,
     ...(statusFilter && { status: statusFilter }),
+    ...(severityFilter && { severity: severityFilter }),
   })
+
+  useEffect(() => {
+    if (selectedId) {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [selectedId])
 
   return (
     <div className={styles.page}>
@@ -69,6 +78,35 @@ export function Component(): React.ReactElement {
             {tab.label}
           </button>
         ))}
+      </div>
+      <div className={styles.filterBar}>
+        <label htmlFor="alert-severity">Severity</label>
+        <select
+          id="alert-severity"
+          className={styles.select}
+          value={severityFilter}
+          onChange={(event) => {
+            setSeverityFilter(event.target.value)
+            setPage(1)
+          }}
+        >
+          <option value="">All severities</option>
+          {['critical', 'high', 'medium', 'low', 'info'].map((severity) => (
+            <option key={severity} value={severity}>
+              {SEVERITY_LABELS[severity] ?? severity}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className={styles.refreshBtn}
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          title="Refresh alerts"
+        >
+          <LuRefreshCw className={isFetching ? styles.spinning : undefined} />
+          Refresh
+        </button>
       </div>
 
       <div className={styles.list}>
@@ -93,10 +131,12 @@ export function Component(): React.ReactElement {
       </div>
 
       {selectedId && (
-        <AlertDetailPanel
-          alertId={selectedId}
-          onClose={() => setSelectedId(null)}
-        />
+        <div ref={detailRef}>
+          <AlertDetailPanel
+            alertId={selectedId}
+            onClose={() => setSelectedId(null)}
+          />
+        </div>
       )}
 
       {data && data.pages > 1 && (
@@ -158,12 +198,7 @@ function AlertCard({
         <span>{alert.rule_name}</span>
         <span>{alert.matched_event_count} events</span>
         <span>
-          {new Date(alert.created_at).toLocaleString([], {
-            month: 'short',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {formatTimestamp(alert.created_at)}
         </span>
       </div>
       {alert.mitre_technique && (
@@ -223,7 +258,7 @@ function AlertDetailPanel({
         <InfoField label="Events" value={alert.matched_event_count.toString()} />
         <InfoField
           label="Created"
-          value={new Date(alert.created_at).toLocaleString()}
+          value={formatTimestamp(alert.created_at)}
         />
         {alert.mitre_tactic && (
           <InfoField label="MITRE Tactic" value={alert.mitre_tactic} />
@@ -264,6 +299,7 @@ function AlertDetailPanel({
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit',
+                    timeZoneName: 'short',
                   })}
                 </span>
                 <span
@@ -284,6 +320,20 @@ function AlertDetailPanel({
       )}
     </div>
   )
+}
+
+function formatTimestamp(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Invalid timestamp'
+  return new Intl.DateTimeFormat([], {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  }).format(date)
 }
 
 function InfoField({

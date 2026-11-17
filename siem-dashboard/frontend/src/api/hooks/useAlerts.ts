@@ -34,23 +34,20 @@ import type {
   AlertStatusUpdateRequest,
   PaginatedResponse,
 } from '@/api/types'
-import { API_ENDPOINTS, PAGINATION, QUERY_KEYS } from '@/config'
+import { API_ENDPOINTS, QUERY_KEYS } from '@/config'
 import { apiClient, QUERY_STRATEGIES } from '@/core/lib'
 
 export const alertQueries = {
   all: () => QUERY_KEYS.ALERTS.ALL,
-  list: (page: number, size: number) => QUERY_KEYS.ALERTS.LIST(page, size),
+  list: (params: AlertQueryParams) => QUERY_KEYS.ALERTS.LIST(params),
   byId: (id: string) => QUERY_KEYS.ALERTS.BY_ID(id),
 } as const
 
 export const useAlerts = (
   params: AlertQueryParams = {}
 ): UseQueryResult<PaginatedResponse<Alert>, Error> => {
-  const page = params.page ?? PAGINATION.DEFAULT_PAGE
-  const perPage = params.per_page ?? PAGINATION.DEFAULT_SIZE
-
   return useQuery({
-    queryKey: alertQueries.list(page, perPage),
+    queryKey: alertQueries.list(params),
     queryFn: async () => {
       const response = await apiClient.get<PaginatedResponse<Alert>>(
         API_ENDPOINTS.ALERTS.LIST,

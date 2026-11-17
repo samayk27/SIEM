@@ -66,6 +66,14 @@ Two roles. First, it powers the streaming pipeline. Two Redis Streams (`siem:log
 **React Frontend**
 Single page app with React 19, TypeScript, and a clean separation between data fetching (TanStack Query hooks in `frontend/src/api/hooks/`) and UI state (Zustand stores in `frontend/src/core/stores/`). Real time updates come through two SSE connections managed by `useLogStream` and `useAlertStream` hooks.
 
+**Enterprise Client**
+The `client-app/` service is intentionally isolated from the analyst dashboard.
+It uses Flask sessions and a SQLite user store for signup and client identities.
+Protected client actions forward allowlisted events to the backend ingestion API.
+External applications can send signed messages with `X-External-Key`; the client
+records them in its integration activity view and forwards them as generic SIEM
+events.
+
 ## Data Flow
 
 ### Log Ingestion Pipeline
@@ -337,6 +345,7 @@ What the platform defends against:
 3. **Privilege escalation via role manipulation.** The `update_role` controller in `admin_ctrl.py:36-43` checks `User.count_admins()` before allowing demotion. You can't demote the last admin. Admins also can't deactivate or delete their own accounts.
 
 4. **SSE token leakage.** SSE connections can't use the Authorization header (browser limitation with EventSource), so tokens go in the query string. The `extract_bearer_token()` function in `app/core/auth.py:97-102` checks the header first, then falls back to `request.args.get("token")`. This is a known trade-off. The token appears in server access logs but is transmitted over HTTPS.
+5. **Client login telemetry.** The enterprise client records failed login metadata and classifies SQL-injection-shaped input without storing or forwarding passwords. This supports detection demonstrations while keeping credential values out of the SIEM.
 
 What's out of scope:
 Network-level attacks (handled by infrastructure), database injection (MongoEngine parameterizes queries), XSS (React escapes by default, plus security headers from Nginx).

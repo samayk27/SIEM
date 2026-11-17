@@ -44,7 +44,7 @@ def normalize(raw: dict[str, Any]) -> dict[str, Any]:
     """
     Dispatch to the appropriate format normalizer and return enriched data
     """
-    source_type = raw.get("source_type", SourceType.GENERIC)
+    source_type = _normalize_source_type(raw.get("source_type"))
     normalizer_fn = NORMALIZERS.get(source_type, _normalize_generic)
     base = _extract_common(raw)
     specific = normalizer_fn(raw)
@@ -57,10 +57,8 @@ def _extract_common(raw: dict[str, Any]) -> dict[str, Any]:
     Pull fields shared across all log formats into a base dict
     """
     return {
-        "timestamp": raw.get("timestamp",
-                             datetime.now(UTC)),
-        "source_type": raw.get("source_type",
-                               SourceType.GENERIC),
+        "timestamp": _normalize_timestamp(raw.get("timestamp")),
+        "source_type": _normalize_source_type(raw.get("source_type")),
         "source_ip": raw.get("source_ip"),
         "dest_ip": raw.get("dest_ip"),
         "source_port": raw.get("source_port"),
@@ -71,6 +69,35 @@ def _extract_common(raw: dict[str, Any]) -> dict[str, Any]:
         "raw": raw,
         "normalized": {},
     }
+
+
+def _normalize_source_type(value: Any) -> str:
+    """
+    Keep external sources within the model's supported source categories.
+    """
+    source_type = value.value if isinstance(value, SourceType) else value
+    if source_type in {source.value for source in SourceType}:
+        return str(source_type)
+    return SourceType.GENERIC.value
+
+
+def _normalize_timestamp(value: Any) -> datetime:
+    """
+    Convert ISO timestamps to timezone-aware UTC datetimes.
+    """
+    if isinstance(value, datetime):
+        timestamp = value
+    elif isinstance(value, str):
+        try:
+            timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return datetime.now(UTC)
+    else:
+        return datetime.now(UTC)
+
+    if timestamp.tzinfo is None:
+        return timestamp.replace(tzinfo=UTC)
+    return timestamp.astimezone(UTC)
 
 
 @_register(SourceType.FIREWALL)

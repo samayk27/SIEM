@@ -4,6 +4,12 @@
 
 A full stack Security Information and Event Management (SIEM) platform that ingests log events from multiple source types, normalizes them into a common schema, classifies severity using pattern matching, and runs a real time correlation engine to generate alerts. It includes a React dashboard for monitoring, investigation, and attack scenario playback.
 
+The repository also contains an isolated enterprise client demo in
+`client-app/`. It has its own signup and session flow, protected workspace
+actions, document and approval activity, and an external message endpoint.
+Those actions are forwarded to the SIEM as telemetry so the client demonstrates
+how a real business application can feed detections.
+
 The backend is Flask with MongoDB for persistence and Redis Streams for real time event delivery. The frontend is React with TypeScript, Zustand for state, and Server-Sent Events for live updates.
 
 ## Why This Matters
@@ -72,10 +78,17 @@ cd PROJECTS/intermediate/siem-dashboard
 docker compose -f dev.compose.yml up --build
 
 # The app will be available at http://localhost:8431
+# The enterprise client will be available at http://localhost:7357
+# Client signup is available at http://localhost:7357/signup
 # Backend API is at http://localhost:8431/api/v1/
 # Direct backend access at http://localhost:5113
 # Direct frontend dev server at http://localhost:3959
 ```
+
+Client login failures are also monitored. Repeated invalid passwords produce
+`login_failure` events, while SQL-injection-shaped input produces
+`login_sql_injection` events. Neither password values nor password hashes are
+sent to SIEM telemetry.
 
 Create an admin account:
 

@@ -20,6 +20,49 @@
   padding-bottom: $space-px;
 }
 
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  color: $text-muted;
+  font-size: $font-size-xs;
+}
+
+.select {
+  height: 34px;
+  padding: 0 $space-3;
+  color: $text-default;
+  background-color: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+}
+
+.refreshBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  height: 34px;
+  padding: 0 $space-3;
+  color: $text-light;
+  background-color: $bg-surface-100;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .tab {
   padding: $space-2 $space-4;
   background: transparent;
