@@ -56,11 +56,11 @@ This project includes step-by-step learning materials covering security theory, 
 
 | Module | Topic |
 |--------|-------|
-| [00 - Overview](learn/00-OVERVIEW.md) | Prerequisites and quick start |
-| [01 - Concepts](learn/01-CONCEPTS.md) | Security theory and real-world breaches |
-| [02 - Architecture](learn/02-ARCHITECTURE.md) | System design and data flow |
-| [03 - Implementation](learn/03-IMPLEMENTATION.md) | Code walkthrough |
-| [04 - Challenges](learn/04-CHALLENGES.md) | Extension ideas and exercises |
+| [00 - Overview](siem-dashboard/learn/00-OVERVIEW.md) | Prerequisites and quick start |
+| [01 - Concepts](siem-dashboard/learn/01-CONCEPTS.md) | Security theory and real-world breaches |
+| [02 - Architecture](siem-dashboard/learn/02-ARCHITECTURE.md) | System design and data flow |
+| [03 - Implementation](siem-dashboard/learn/03-IMPLEMENTATION.md) | Code walkthrough |
+| [04 - Challenges](siem-dashboard/learn/04-CHALLENGES.md) | Extension ideas and exercises |
 
 ## License
 
