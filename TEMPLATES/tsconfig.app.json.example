@@ -1,0 +1,90 @@
+// ©AngelaMos | 2026
+// tsconfig.app.json.example
+//
+// TypeScript config for BROWSER code (everything in src/).
+//
+// TypeScript 6 changed defaults and TypeScript 7 turned every 6.0
+// deprecation into a hard error. Do NOT copy these forward from older
+// configs:
+//
+//   baseUrl                         removed; `paths` resolve relative to
+//                                   this file
+//   moduleResolution node / node10  removed; use bundler
+//   esModuleInterop: false          can no longer be disabled
+//   "DOM.Iterable" in lib           redundant; DOM now includes it
+//
+// Defaults that changed, set explicitly below anyway so the file reads the
+// same on every compiler: strict is true, noUncheckedSideEffectImports is
+// true, and `types` is [] so ambient types must be listed.
+//
+// Docs: https://www.typescriptlang.org/tsconfig/
+{
+  "compilerOptions": {
+    // Incremental cache for `tsc -b`. Lives in node_modules, never committed.
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    // ES2023, as `create vite` generates. One gap to know: Vite 8's default
+    // build target (chrome111, firefox114, safari16.4) predates Firefox 115,
+    // which added toSorted / toReversed / toSpliced / with, and Vite does
+    // not polyfill them. Use them only if Firefox 114 is out of scope. DOM
+    // includes the iterable and async-iterable DOM collections.
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+
+    // Default is [] since TS 6: nothing from @types/* leaks in unless
+    // listed. vite/client types import.meta.env and asset imports.
+    "types": ["vite/client"],
+
+    // Bundler mode. moduleResolution bundler follows package.json `exports`
+    // the way Vite does and allows extensionless relative imports. noEmit
+    // because Vite (Oxc) transpiles and tsc only type-checks.
+    // verbatimModuleSyntax forces `import type`, so type-only imports are
+    // erased predictably and never trigger a module side effect.
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    // Automatic JSX runtime: no `import React` in every file.
+    "jsx": "react-jsx",
+
+    // strict is the baseline; everything after it goes further.
+    //
+    // noUncheckedIndexedAccess    arr[i] and record[key] are T | undefined.
+    //                             The largest class of runtime "cannot read
+    //                             properties of undefined" strict misses.
+    // exactOptionalPropertyTypes  `{ a?: string }` rejects an explicit
+    //                             `a: undefined`, so "absent" and "present
+    //                             but undefined" stay distinct (PATCH bodies,
+    //                             zod schemas).
+    // noImplicitOverride          subclass overrides need `override`.
+    // noImplicitReturns           every path returns, or none does.
+    // erasableSyntaxOnly          bans enums, namespaces and parameter
+    //                             properties: syntax type stripping cannot
+    //                             erase. Use `as const` objects for enums.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedSideEffectImports": true,
+
+    // `import { Button } from '@/components/Button'` instead of '../../../'.
+    // No baseUrl: since TS 6 targets resolve relative to this file. Vite
+    // reads the same mapping when vite.config.ts sets
+    // `resolve: { tsconfigPaths: true }` (native since Vite 8, so the
+    // vite-tsconfig-paths plugin is no longer needed).
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}

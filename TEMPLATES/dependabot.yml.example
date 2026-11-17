@@ -1,0 +1,188 @@
+# ©AngelaMos | 2026
+# dependabot.yml.example
+#
+# Annotated Dependabot configuration for Cybersecurity-Projects.
+# Copy to `.github/dependabot.yml`. Delete the ecosystems you do not use.
+# Validate before pushing (also wired into .pre-commit-config.yaml.example):
+#   uvx check-jsonschema --builtin-schema vendor.dependabot .github/dependabot.yml
+#
+# Two independent mechanisms share this file:
+#   version updates    the schedule below: "a newer version exists"
+#   security updates   immediate PRs for a known CVE, enabled in the repo's
+#                      Settings > Code security. NOT delayed by cooldown or
+#                      limited by open-pull-requests-limit.
+#
+# Docs: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+
+version: 2
+
+updates:
+
+  # ── Python (uv) ─────────────────────────────────────────────────────────────
+  # `uv` updates pyproject.toml AND regenerates uv.lock. The old `pip`
+  # ecosystem only edits the manifest and leaves uv.lock stale, which makes
+  # every `uv sync --locked` in CI fail.
+  #
+  # cooldown: a release must be this many days old before Dependabot
+  # proposes it. Most malicious package versions are caught and yanked
+  # within days, so a short wait is cheap supply-chain insurance. Security
+  # updates ignore it.
+  #
+  # groups: one PR for all minor+patch bumps; each major stays its own PR so
+  # a breaking change is reviewed (and reverted) on its own.
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+    groups:
+      python-minor-patch:
+        update-types: ["minor", "patch"]
+        patterns: ["*"]
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "python"]
+    commit-message:
+      prefix: "chore(deps)"
+
+
+  # ── JavaScript (pnpm) ───────────────────────────────────────────────────────
+  # pnpm has no ecosystem key of its own; "npm" handles pnpm-lock.yaml and
+  # regenerates it with the pnpm version pinned in package.json
+  # `packageManager`. Keep that pin exact, or the lockfile format can change
+  # under a Dependabot PR.
+  #
+  # Runtime and tooling are grouped separately, so a dev-tool bump that
+  # breaks the build never holds runtime updates hostage in the same PR.
+  # (Security updates are separate PRs regardless of groups.)
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+    groups:
+      npm-runtime:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      npm-tooling:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "javascript"]
+    commit-message:
+      prefix: "chore(deps)"
+
+
+  # ── Docker ──────────────────────────────────────────────────────────────────
+  # `docker` bumps FROM lines in Dockerfiles; `docker-compose` bumps
+  # `image:` tags in compose files. Neither receives security updates, so a
+  # base image only moves when these run.
+  #
+  # Dependabot only scans files whose NAME matches /dockerfile|containerfile/i
+  # (dependabot-core docker/file_fetcher.rb). `Dockerfile`, `Dockerfile.prod`
+  # and `vite.prod.dockerfile` are found; `infra/docker/vite.prod` and
+  # `conf/docker/prod/api.docker` are silently skipped. The repo convention
+  # is `infra/docker/<service>.<env>.dockerfile`; list every directory that
+  # holds build files.
+
+  - package-ecosystem: "docker"
+    directories: ["/", "/infra/docker"]
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  # Bumps `uses:` refs in .github/workflows. Actions run with repository
+  # tokens, so stale actions are a supply-chain surface of their own.
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"
+
+
+  # ── pre-commit ──────────────────────────────────────────────────────────────
+  # Bumps every `rev:` in .pre-commit-config.yaml, replacing the manual
+  # `pre-commit autoupdate`.
+
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      pre-commit-hooks:
+        patterns: ["*"]
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"
+
+
+  # ── Go (uncomment for Go projects) ──────────────────────────────────────────
+  # Updates go.mod and go.sum.
+  #
+  # - package-ecosystem: "gomod"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #     day: "monday"
+  #   cooldown:
+  #     default-days: 3
+  #     semver-major-days: 14
+  #   groups:
+  #     go-minor-patch:
+  #       update-types: ["minor", "patch"]
+  #       patterns: ["*"]
+  #   labels: ["dependencies", "go"]
+  #   commit-message:
+  #     prefix: "chore(deps)"
+
+
+  # ── Rust (uncomment for Rust projects) ──────────────────────────────────────
+  # Updates Cargo.toml and Cargo.lock.
+  #
+  # - package-ecosystem: "cargo"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #     day: "monday"
+  #   cooldown:
+  #     default-days: 3
+  #     semver-major-days: 14
+  #   groups:
+  #     cargo-minor-patch:
+  #       update-types: ["minor", "patch"]
+  #       patterns: ["*"]
+  #   labels: ["dependencies", "rust"]
+  #   commit-message:
+  #     prefix: "chore(deps)"

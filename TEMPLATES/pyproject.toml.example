@@ -1,0 +1,279 @@
+# ©AngelaMos | 2026
+# pyproject.toml.example
+#
+# Annotated pyproject.toml template for Cybersecurity-Projects.
+# Copy into the project root, rename to pyproject.toml, replace every
+# <PLACEHOLDER>. uv is the only installer: `uv sync` creates .venv and
+# installs the project plus the `dev` group; `uv run <tool>` runs anything
+# inside it. Never pip.
+#
+# Formatting is yapf (.style.yapf), linting is ruff, types are mypy.
+# Line length is 75 everywhere: yapf column_limit, ruff line-length, and
+# max_line_length in .editorconfig.
+#
+# Guide: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+# Spec:  https://packaging.python.org/en/latest/specifications/pyproject-toml/
+# uv:    https://docs.astral.sh/uv/concepts/projects/
+
+
+# ── Project Metadata ──────────────────────────────────────────────────────────
+# license is an SPDX expression (PEP 639), not the old `{ text = "MIT" }`
+# table, which is deprecated. Do NOT add a "License :: ..." classifier
+# next to it: PEP 639 deprecates license classifiers, uv_build warns,
+# setuptools refuses to build. The LICENSE file is picked up automatically.
+
+[project]
+name = "<project-name>"
+version = "0.1.0"
+description = "<One-line description of what this project does>"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.14"
+authors = [
+    { name = "Carter Perez", email = "carterperez@angelamos.com" },
+]
+keywords = ["security", "<keyword>", "<keyword>"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Security",
+    "Typing :: Typed",
+]
+
+# Runtime dependencies only: what `import` statements in src/ need.
+# Lower bounds, no upper caps. uv.lock pins the exact resolved versions, so
+# caps here only cause resolution conflicts for anyone depending on you.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/CarterPerez-dev/Cybersecurity-Projects"
+Repository = "https://github.com/CarterPerez-dev/Cybersecurity-Projects"
+Documentation = "https://github.com/CarterPerez-dev/Cybersecurity-Projects/tree/main/PROJECTS/<tier>/<project-dir>"
+Issues = "https://github.com/CarterPerez-dev/Cybersecurity-Projects/issues"
+
+# Console entry point: installs a `<cli-name>` executable on PATH.
+[project.scripts]
+"<cli-name>" = "<package_name>.cli:main"
+
+
+# ── Development Dependencies (PEP 735) ────────────────────────────────────────
+# Dependency GROUPS, not `[project.optional-dependencies] dev`: groups are
+# local-only and never published as installable extras. `uv sync` and
+# `uv run` install the `dev` group by default; CI images can opt out with
+# `uv sync --no-dev`.
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.3",
+    "mypy>=2.4.1",
+    "yapf>=0.43.0",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "hypothesis>=6.140.0",
+    "pre-commit>=4.7.0",
+]
+
+
+# ── Build System ──────────────────────────────────────────────────────────────
+# hatchling >= 1.27 emits Core Metadata 2.4 or newer (License-Expression)
+# by default; current releases emit 2.5.
+# Pure-Python alternative that uv itself recommends: uv_build, pinned with an
+# upper bound because it versions in lockstep with uv:
+#
+#   requires = ["uv_build>=0.13.6,<0.14"]
+#   build-backend = "uv_build"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+# src layout: the package is importable only after installation, so tests
+# exercise the installed package and never pick up a stray local import.
+[tool.hatch.build.targets.wheel]
+packages = ["src/<package_name>"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TOOL CONFIGURATION
+# Nothing below ships in the built package.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+# ── Ruff (lint only; yapf formats) ────────────────────────────────────────────
+# `select` is explicit and exhaustive on purpose. Ruff 0.16 replaced its
+# default rule set (59 rules became 413) and 0.17 changed it again; relying
+# on defaults means a ruff upgrade silently changes what CI enforces.
+#
+# Docs:  https://docs.astral.sh/ruff/configuration/
+# Rules: https://docs.astral.sh/ruff/rules/
+
+[tool.ruff]
+line-length = 75
+indent-width = 4
+target-version = "py314"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "B",      # bugbear: likely bugs and design problems
+    "S",      # bandit: security
+    "N",      # pep8-naming
+    "UP",     # pyupgrade: modern syntax for target-version
+    "C4",     # comprehensions
+    "C90",    # mccabe complexity
+    "SIM",    # simplify
+    "PTH",    # pathlib over os.path
+    "PERF",   # performance anti-patterns
+    "RUF",    # ruff-specific
+    "PL",     # pylint port (replaces running pylint itself)
+    "TRY",    # exception handling
+    "LOG",    # logging misuse
+    "G",      # logging format strings
+    "ASYNC",  # async pitfalls (blocking calls in coroutines)
+    "ARG",    # unused arguments
+    "PIE",    # misc lints
+    "RET",    # return statement consistency
+    "DTZ",    # naive datetimes
+    "T20",    # stray print() / pprint()
+    "ERA",    # commented-out code
+    "PGH",    # blanket `# type: ignore` / `# noqa`
+    "FURB",   # refurb: modern idioms
+    "BLE",    # blind `except Exception`
+]
+ignore = [
+    "E501",     # line length is yapf's job
+    "TRY003",   # long messages in raise
+    "PLC0415",  # import outside top level (lazy imports for CLI speed)
+    # The three PEP 695 upgrades below would demand `def f[T]()` and
+    # `type X = ...`, syntax yapf 0.43 crashes on (see .style.yapf). Until
+    # yapf parses PEP 695, generics are spelled with TypeVar / TypeAlias.
+    "UP040",    # TypeAlias -> `type` statement
+    "UP046",    # Generic[T] class -> class C[T]
+    "UP047",    # TypeVar function -> def f[T]
+]
+
+# PLR2004 (magic value comparison) stays ON for src/: constants belong in
+# config. Tests compare against literal expected values by design.
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "PLR2004", "S105", "S106", "ARG001"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pylint]
+max-args = 8
+
+
+# ── mypy ──────────────────────────────────────────────────────────────────────
+# strict = true already covers untyped defs/calls, Any generics, redundant
+# casts, unused ignores, implicit re-exports, strict equality and extra
+# checks. The settings after it are the strict-mode gaps.
+#
+# Docs: https://mypy.readthedocs.io/en/stable/config_file.html
+
+[tool.mypy]
+python_version = "3.14"
+mypy_path = "src"
+strict = true
+warn_unreachable = true
+strict_equality_for_none = true
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "redundant-self",
+    "truthy-bool",
+    "truthy-iterable",
+    "possibly-undefined",
+    "deprecated",
+    "exhaustive-match",
+    "explicit-override",
+    "mutable-override",
+    "unused-awaitable",
+    "unimported-reveal",
+]
+pretty = true
+show_column_numbers = true
+
+# Third-party packages without type information:
+# [[tool.mypy.overrides]]
+# module = ["untyped_lib", "untyped_lib.*"]
+# ignore_missing_imports = true
+
+
+# ── pytest ────────────────────────────────────────────────────────────────────
+# [tool.pytest] (pytest 9+) takes native TOML types; the older
+# [tool.pytest.ini_options] table now warns on non-string values.
+#
+# strict = true turns on strict_config, strict_markers, strict_xfail and
+# strict_parametrization_ids, and will turn on future strictness options
+# too, which is safe here because uv.lock pins pytest.
+#
+# filterwarnings = ["error"] makes every warning a failure, so deprecations
+# are fixed when they appear instead of when the API is removed. Add
+# targeted `ignore:` entries AFTER "error" for third-party noise.
+#
+# Docs: https://docs.pytest.org/en/stable/reference/reference.html#ini-options-ref
+
+[tool.pytest]
+minversion = "9.0"
+strict = true
+testpaths = ["tests"]
+addopts = ["-ra", "--tb=short"]
+filterwarnings = ["error"]
+markers = [
+    "integration: needs containers or the network",
+    "slow: long-running",
+]
+
+# Async tests: add pytest-asyncio to the dev group, then uncomment.
+# asyncio_mode = "auto"
+# asyncio_default_fixture_loop_scope = "function"
+
+
+# ── coverage ──────────────────────────────────────────────────────────────────
+# exclude_also EXTENDS the built-in exclusions; exclude_lines would replace
+# them (and silently drop `# pragma: no cover`). Each entry is a regex
+# matched against the line; the `...` entry is anchored so it only excludes
+# a bare Protocol / overload stub body, not any line containing "...".
+#
+# Docs: https://coverage.readthedocs.io/en/latest/config.html
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+    "^\\s*\\.\\.\\.$",
+]
+
+
+# ── ty (optional second type checker, beta) ──────────────────────────────────
+# Astral's type checker. Beta and versioned 0.0.x, so any release can change
+# diagnostics: pin it exactly in the dev group ("ty==0.0.95") before
+# enabling. The two rules below default to ignore.
+#
+# Docs: https://docs.astral.sh/ty/reference/configuration/
+#
+# [tool.ty.environment]
+# python-version = "3.14"
+#
+# [tool.ty.src]
+# include = ["src", "tests"]
+#
+# [tool.ty.rules]
+# possibly-missing-attribute = "error"
+# possibly-missing-import = "error"

@@ -1,0 +1,173 @@
+# ©AngelaMos | 2026
+# .dockerignore.example
+#
+# Annotated .dockerignore template for Cybersecurity-Projects.
+# Copy next to the build CONTEXT root (the path compose passes as `context:`),
+# rename to `.dockerignore`.
+#
+# Everything not excluded here is shipped to the builder as build context.
+# Three things go wrong without it:
+#   1. Secrets (.env, keys) land in a layer, and `docker history` or a pushed
+#      image leaks them forever.
+#   2. Host node_modules/.venv (wrong libc, wrong arch) override the
+#      container's own install.
+#   3. Any edit to an unrelated file (docs, .git) busts the layer cache.
+#
+# Syntax is .gitignore-like, matched from the context root. `**` crosses
+# directories, `!` re-includes, and the LAST matching line wins.
+#
+# Per-Dockerfile ignore files: BuildKit reads `<name>.dockerignore` next to
+# the Dockerfile before falling back to this file. Use that when one context
+# feeds several Dockerfiles (prod.Dockerfile.dockerignore, etc.).
+#
+# Docs: https://docs.docker.com/build/concepts/context/#dockerignore-files
+
+
+# ── Allowlist Alternative (strongest option) ──────────────────────────────────
+# Deny everything, then re-include only what the Dockerfile COPYs. A new
+# secret file can never leak because nothing is shipped by default. Costs one
+# line per new top-level path. To use it, delete every section below and
+# uncomment this block, adjusting paths to your layout:
+#
+# *
+# !src/
+# !pyproject.toml
+# !uv.lock
+# !README.md
+# !LICENSE
+# **/__pycache__/
+# **/*.py[cod]
+
+
+# ── Secrets & Environment ─────────────────────────────────────────────────────
+# NEVER bake secrets into an image. Inject at runtime (env_file, secrets:).
+# `**/` catches nested copies like backend/.env.
+
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/.npmrc.local
+**/.netrc
+**/id_rsa*
+**/id_ed25519*
+
+
+# ── Version Control ───────────────────────────────────────────────────────────
+# .git alone can be hundreds of MB, and it changes on every commit, which
+# invalidates any `COPY . .` layer.
+
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+
+
+# ── Dependencies Installed On The Host ────────────────────────────────────────
+# The image installs its own. Host copies are the wrong platform and shadow
+# the container's install.
+
+**/node_modules/
+**/.pnpm-store/
+**/.venv/
+**/venv/
+/target/
+**/.zig-cache/
+**/zig-out/
+
+
+# ── Python Caches ─────────────────────────────────────────────────────────────
+
+**/__pycache__/
+**/*.py[cod]
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
+**/.hypothesis/
+**/.ty_cache/
+
+
+# ── Frontend Build Caches ─────────────────────────────────────────────────────
+
+**/dist/
+/build/
+**/.vite/
+**/*.tsbuildinfo
+**/coverage/
+
+
+# ── Coverage & Reports ────────────────────────────────────────────────────────
+
+**/.coverage
+**/.coverage.*
+**/htmlcov/
+**/coverage.xml
+**/coverage.out
+
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+# Kept IN the context on purpose. Projects here run their suites inside a
+# container (a `test` stage or `docker compose run`), and multi-stage builds
+# only copy what each stage asks for, so tests never reach the runtime image
+# anyway. Uncomment only if no stage ever runs tests.
+#
+# tests/
+# **/conftest.py
+
+
+# ── Container Definitions ─────────────────────────────────────────────────────
+# Changing a compose file should not rebuild the image.
+
+**/Dockerfile*
+**/*.Dockerfile
+**/*.dockerfile
+**/*.docker
+**/compose*.yml
+**/compose*.yaml
+**/*.compose.yml
+**/docker-compose*.yml
+.dockerignore
+
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+# README.md and LICENSE are RE-INCLUDED: pyproject.toml declares
+# `readme = "README.md"`, and the build backend aborts without it, so a
+# `uv sync` that installs the project inside the image fails.
+
+docs/
+learn/
+**/*.md
+!README.md
+!LICENSE
+**/*.rst
+
+
+# ── Dev Tooling & CI ──────────────────────────────────────────────────────────
+
+.github/
+.pre-commit-config.yaml
+.editorconfig
+.style.yapf
+justfile
+Makefile
+.idea/
+.vscode/
+.zed/
+.claude/
+**/*.swp
+**/*.swo
+
+
+# ── Logs, Local Databases, OS Junk ────────────────────────────────────────────
+
+**/*.log
+**/logs/
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/dump.rdb
+**/.DS_Store
+**/Thumbs.db
