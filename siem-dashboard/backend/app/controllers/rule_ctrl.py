@@ -30,6 +30,63 @@ from app.engine.correlation import (
 )
 from app.models.CorrelationRule import CorrelationRule
 from app.models.LogEvent import LogEvent
+from app.models.LogEvent import Severity
+from app.models.CorrelationRule import RuleType
+
+
+DEFAULT_RULES = [
+    {
+        "name": "Excessive Failed Logins",
+        "description": "Detects repeated authentication failures from one source.",
+        "rule_type": RuleType.THRESHOLD,
+        "conditions": {
+            "event_filter": {"event_type": "login_failure"},
+            "threshold": 3,
+            "window_seconds": 60,
+            "group_by": "source_ip",
+        },
+        "severity": Severity.HIGH,
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110 Brute Force",
+    },
+    {
+        "name": "Bulk Sensitive Downloads",
+        "description": "Detects rapid file downloads by one enterprise user.",
+        "rule_type": RuleType.THRESHOLD,
+        "conditions": {
+            "event_filter": {"event_type": "file_download"},
+            "threshold": 5,
+            "window_seconds": 120,
+            "group_by": "username",
+        },
+        "severity": Severity.HIGH,
+        "mitre_tactic": "Collection",
+        "mitre_technique": "T1530 Data from Cloud Storage",
+    },
+    {
+        "name": "API Rate Limit Abuse",
+        "description": "Detects requests blocked by the enterprise API policy.",
+        "rule_type": RuleType.THRESHOLD,
+        "conditions": {
+            "event_filter": {"event_type": "rate_limit_blocked"},
+            "threshold": 1,
+            "window_seconds": 300,
+            "group_by": "source_ip",
+        },
+        "severity": Severity.MEDIUM,
+        "mitre_tactic": "Credential Access",
+        "mitre_technique": "T1110 Brute Force",
+    },
+]
+
+
+def ensure_default_rules() -> None:
+    """
+    Seed useful lab detections without overwriting user-created rules.
+    """
+    for definition in DEFAULT_RULES:
+        if CorrelationRule.objects(name=definition["name"]).first() is None:
+            CorrelationRule(**definition).save()
 
 
 def list_rules() -> list[Any]:

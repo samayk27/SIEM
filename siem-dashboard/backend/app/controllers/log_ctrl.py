@@ -65,7 +65,13 @@ def ingest_log() -> LogEvent:
     """
     Normalize, classify, persist, and publish a log event
     """
-    raw = g.validated.model_dump(exclude_none = True)
+    return ingest_event(g.validated.model_dump(exclude_none = True))
+
+
+def ingest_event(raw: dict[str, Any]) -> LogEvent:
+    """
+    Run any event through the same normalize, persist, and stream pipeline.
+    """
 
     normalized = normalize(raw)
     severity = classify(normalized)

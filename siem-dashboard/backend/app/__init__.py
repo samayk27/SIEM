@@ -66,8 +66,17 @@ def create_app() -> Flask:
     for orphan in ScenarioRun.get_active_runs():
         orphan.mark_stopped()
 
+    from app.controllers.rule_ctrl import ensure_default_rules
+    ensure_default_rules()
+
+    import os
     from app.engine.correlation import start_engine
-    start_engine()
+    debug_reloader = os.environ.get("FLASK_DEBUG", "").lower() in {
+        "1",
+        "true",
+    }
+    if not debug_reloader or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        start_engine()
 
     @app.get("/health")
     def health():  # type: ignore[no-untyped-def]

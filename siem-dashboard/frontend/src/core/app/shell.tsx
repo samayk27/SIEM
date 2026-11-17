@@ -24,6 +24,7 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { GiButterflyWarning } from 'react-icons/gi'
 import {
   LuActivity,
+  LuBuilding2,
   LuChevronLeft,
   LuChevronRight,
   LuLayoutDashboard,
@@ -47,6 +48,7 @@ const NAV_ITEMS = [
   { path: ROUTES.ALERTS, label: 'Alerts', icon: GiButterflyWarning },
   { path: ROUTES.RULES, label: 'Rules', icon: LuShield },
   { path: ROUTES.SCENARIOS, label: 'Scenarios', icon: LuPlay },
+  { path: ROUTES.LAB, label: 'Enterprise Lab', icon: LuBuilding2 },
 ] as const
 
 const BOTTOM_NAV_ITEMS = [
