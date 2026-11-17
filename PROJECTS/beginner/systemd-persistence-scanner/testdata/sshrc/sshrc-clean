@@ -1,2 +1,0 @@
-#!/bin/sh
-logger -t sshrc "SSH login from $SSH_CONNECTION"
